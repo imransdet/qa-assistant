@@ -1,0 +1,40 @@
+# ─── Secrets — never commit ───────────────────────────────────
+.env
+.env.local
+.env.*
+!.env.example
+
+# MCP config contains hardcoded API tokens — use .mcp.example.json as template
+.mcp.json
+
+# Claude Code settings contain API tokens — use settings.example.json as template
+.claude/settings.json
+.claude/settings.local.json
+.claude/settings.p*.json
+
+# Claude Code MCP profile configs contain API tokens — use mcp.p*.example.json as templates
+.claude/mcp.p1.json
+.claude/mcp.p2.json
+.claude/mcp.p3.json
+.claude/mcp.p4.json
+
+# Google service account private key
+credentials/
+
+# ─── Runtime & generated ──────────────────────────────────────
+# Playwright MCP session logs
+.playwright-mcp/
+
+# QA session output — screenshots, logs, reports
+qa-artifacts/
+
+# Loose screenshots captured during testing
+/*.png
+/*.jpg
+/*.jpeg
+
+# Node
+node_modules/
+
+# macOS
+.DS_Store
