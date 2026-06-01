@@ -57,6 +57,8 @@ flowchart TD
 
 ## WAY 1 — Full Session Flow
 
+![Full QA Session Flow Summary](assets/flow-summary.png)
+
 ```mermaid
 flowchart LR
     A([test it]) --> B[Gather Inputs\nURL + Requirements]
@@ -377,6 +379,8 @@ Optional params (all can be omitted):
 - `Screenshot:` — path to a screenshot of current UI state
 
 WAY 3 uploads to Qase only — no browser, no Jira bugs. Use it before the feature is ready to test.
+
+![Example Test Cases Generated](assets/example-tc-generate.png)
 
 ### WAY 3 Flow
 
