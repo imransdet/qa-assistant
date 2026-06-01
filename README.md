@@ -53,11 +53,11 @@ flowchart TD
 | **WAY 3** — Write Test Cases | `write it` | Analyze requirements → generate test cases → upload to Qase → summary |
 | **WAY 4** — Review Test Cases | `review it` | Audit & improve existing Qase suite → fix fields → fill gaps → summary |
 
+![All Modes Flow Summary](assets/flow-summary.png)
+
 ---
 
 ## WAY 1 — Full Session Flow
-
-![Full QA Session Flow Summary](assets/flow-summary.png)
 
 ```mermaid
 flowchart LR
