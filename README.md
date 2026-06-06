@@ -1,6 +1,6 @@
 # Senior QA Engineer Agent
 
-An autonomous QA agent that runs inside VS Code. Give it a staging URL and a feature description — it writes test cases, executes them in a real browser, finds bugs, and files detailed Jira issues, all without you lifting a finger.
+An autonomous QA agent that runs inside VS Code. Give it a staging URL and a feature description — it writes test cases, executes them in a real browser, finds bugs, files detailed Jira issues, and even creates your QA sprint tickets, all without you lifting a finger.
 
 > Built with Claude Code · Playwright MCP · Qase · Jira
 
@@ -20,6 +20,20 @@ Agent:
   6. Closes the session with a full summary
 ```
 
+Runs entirely inside VS Code. No extra tools, no dashboards, no context-switching.
+
+---
+
+## Five Modes
+
+| Mode | Trigger | What Happens |
+|------|---------|-------------|
+| **WAY 1** — Full QA Session | `test it` | Full lifecycle: analyze → write test cases → execute → file bugs → summary |
+| **WAY 2** — Quick Bug Report | `report it` | Parse your shorthand input → format → file to Jira → print summary |
+| **WAY 3** — Write Test Cases | `write it` | Analyze requirements → generate test cases → upload to Qase → summary |
+| **WAY 4** — Review Test Cases | `review it` | Audit & improve existing Qase suite → fix fields → fill gaps → summary |
+| **WAY 5** — Create QA Jira Tickets | `create jira` | Fetch epic → create Test Case Dev ticket + Retesting parent + sub-tasks → move to backlog |
+
 ---
 
 ## Architecture
@@ -34,57 +48,12 @@ flowchart TD
     APP[Staging App]
     FS[qa-artifacts\nScreenshots and Logs]
 
-    User -->|"test it / report it / write it / review it"| CC
+    User -->|"test it / report it / write it / review it / create jira"| CC
     CC -->|"navigate · click · capture"| PW
     CC -->|"create suites · mark results"| QA
     CC -->|"file issues · attach evidence"| JR
     PW -->|"interacts with"| APP
     PW -->|"saves"| FS
-```
-
----
-
-## Four Modes
-
-| Mode | Trigger | What Happens |
-|------|---------|-------------|
-| **WAY 1** — Full QA Session | `test it` | Full lifecycle: analyze → write test cases → execute → file bugs → summary |
-| **WAY 2** — Quick Bug Report | `report it` | Parse your shorthand input → format → file to Jira → print summary |
-| **WAY 3** — Write Test Cases | `write it` | Analyze requirements → generate test cases → upload to Qase → summary |
-| **WAY 4** — Review Test Cases | `review it` | Audit & improve existing Qase suite → fix fields → fill gaps → summary |
-
-![All Modes Flow Summary](assets/flow-summary.png)
-
----
-
-## WAY 1 — Full Session Flow
-
-```mermaid
-flowchart LR
-    A([test it]) --> B[Gather Inputs\nURL + Requirements]
-    B --> C[Analyze Requirements\nrequirements-analyzer]
-    C --> D[Write Test Cases\ntest-case-writer\nedge-case-generator]
-    D --> E[Upload to Qase\nCreate Test Run]
-    E --> F[Execute in Browser\nplaywright-navigator]
-    F --> G{Pass?}
-    G -->|Fail| H[Capture Evidence\nScreenshot · Console · Network]
-    H --> I[File to Jira\nseverity-classifier · bug-reporter]
-    I --> F
-    G -->|Pass| F
-    F --> K[Session Summary\ntest-session-reporter]
-    K --> Z([Done])
-```
-
-## WAY 2 — Quick Bug Report Flow
-
-```mermaid
-flowchart LR
-    A([report it]) --> B[Parse input\nPortal · Precondition · Steps]
-    B --> C[Derive title\nActual + Expected result]
-    C --> D[Look up assignee\njira_search_users]
-    D --> E[File to Jira\njira_create_issue Bug]
-    E --> F[Print summary\nJira key · title · priority · link]
-    F --> Z([Done])
 ```
 
 ---
@@ -97,7 +66,7 @@ flowchart LR
 | Claude Sonnet (Anthropic) | LLM brain — reasoning, test generation, bug analysis | Included with Claude Pro |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | Browser automation, screenshots, logs | Free |
 | [Qase MCP](https://github.com/qase-tms/qase-mcp-server) | Upload test cases, manage runs, mark results | Free tier available |
-| [mcp-atlassian](https://github.com/sooperset/mcp-atlassian) | File Jira issues with attachments | Free |
+| [mcp-atlassian](https://github.com/sooperset/mcp-atlassian) | File Jira issues, create tickets | Free |
 
 **Estimated total: ~$20/month** (Claude Pro covers everything)
 
@@ -111,12 +80,16 @@ qa-agent/
 ├── README.md                          # This file
 ├── .env.example                       # Template — copy to .env and fill in your tokens
 ├── .mcp.example.json                  # Template — copy to .mcp.json and fill in your tokens
-├── .mcp.json                          # MCP server config (gitignored — created from .mcp.example.json)
+├── .mcp.json                          # Active MCP config (gitignored — created from .mcp.example.json)
 ├── .vscode/
-│   └── mcp.json                       # MCP server config for VS Code extension
+│   └── mcp.json                       # MCP config for VS Code extension (uses ${env:VAR})
 ├── .claude/
 │   ├── settings.example.json          # Template — copy to settings.json and fill in
-│   └── agents/                        # 11 specialist sub-agents (skills)
+│   ├── settings.json                  # Active settings (gitignored)
+│   ├── settings.p1.json               # Profile 1 credentials (gitignored)
+│   ├── settings.p2.json               # Profile 2 credentials (gitignored)
+│   ├── mcp.p1.example.json            # Profile 1 MCP template
+│   └── agents/                        # 10 specialist sub-agents (skills)
 │       ├── requirements-analyzer/
 │       ├── acceptance-criteria-parser/
 │       ├── test-case-writer/
@@ -126,8 +99,7 @@ qa-agent/
 │       ├── bug-reporter/
 │       ├── severity-classifier/
 │       ├── test-session-reporter/
-│       ├── issue-reporter/
-│       └── exploratory-tester/
+│       └── issue-reporter/
 ├── qa-artifacts/                      # Created locally — gitignored
 │   ├── screenshots/
 │   ├── console-logs/
@@ -137,27 +109,7 @@ qa-agent/
     └── google-sa.json                 # Google service account (Profile 4 only)
 ```
 
-Files excluded from git: `.env`, `.mcp.json`, `.claude/settings.json`, `.claude/settings.p*.json`, `credentials/`, `qa-artifacts/`, `.playwright-mcp/`
-
----
-
-## Sub-Agents (Skills)
-
-Each skill is a specialized instruction file that gives the agent expert-level knowledge for one phase of testing.
-
-| Skill | Phase | What It Does |
-|-------|-------|-------------|
-| `requirements-analyzer` | Phase 1 | Breaks specs into happy paths, edge cases, security scenarios |
-| `acceptance-criteria-parser` | Phase 1 | Converts BDD / user-story criteria into pass/fail conditions |
-| `test-case-writer` | Phase 2 | Generates Qase test cases with steps, preconditions, expected results |
-| `edge-case-generator` | Phase 2 | Adds boundary values, injection payloads, encoding attacks |
-| `playwright-navigator` | Phase 3 | Executes tests in browser, manages waits, captures failures |
-| `bug-reporter` | Phase 4 | Files complete Jira reports: repro steps + expected/actual + artifacts |
-| `severity-classifier` | Utility | Two-axis severity × priority model with auto-escalation for security bugs |
-| `test-session-reporter` | Utility | Closes session, updates Qase, generates stakeholder report |
-| `issue-reporter` | WAY 2 | Parses shorthand input → formats → files Jira bug immediately |
-| `requirements-analyzer` + `test-case-writer` + `edge-case-generator` | WAY 3 | Write & upload test cases to Qase from requirements only |
-| `test-case-reviewer` | WAY 4 | Audit existing Qase suite — fix fields, grammar, gaps; create missing cases |
+Files excluded from git: `.env`, `.mcp.json`, `.claude/settings.json`, `.claude/settings.p*.json`, `.claude/mcp.p*.json`, `credentials/`, `qa-artifacts/`
 
 ---
 
@@ -194,35 +146,37 @@ npx playwright install chromium
 
 You also need:
 - Your **Jira workspace URL** (e.g. `https://yourcompany.atlassian.net`)
-- Your **Jira project key** (e.g. `SCRUM`) — visible in Jira board URL
+- Your **Jira project key** (e.g. `SCRUM`) — visible in the Jira board URL
 - Your **Qase project code** (e.g. `DEMO`) — visible in Qase project settings
 
-### 5. Create your `.env` and `.mcp.json` files
+### 5. Create your config files
 
 ```bash
 cp .env.example .env
 cp .mcp.example.json .mcp.json
-```
-
-Open `.env` and fill in your values:
-
-```env
-JIRA_URL=https://yourcompany.atlassian.net
-JIRA_USERNAME=your@email.com
-JIRA_API_TOKEN=your_jira_api_token
-JIRA_PROJECT=YOUR_PROJECT_KEY
-
-QASE_API_TOKEN=your_qase_api_token
-QASE_PROJECT=YOUR_QASE_PROJECT_CODE
-```
-
-### 6. Create your `settings.json` file
-
-```bash
 cp .claude/settings.example.json .claude/settings.json
 ```
 
-Open `.claude/settings.json` and fill in the same values you put in `.env`:
+Open `.mcp.json` and fill in your tokens:
+
+```json
+{
+  "mcpServers": {
+    "qase": {
+      "env": { "QASE_API_TOKEN": "your_qase_api_token_here" }
+    },
+    "jira": {
+      "env": {
+        "JIRA_URL": "https://yourcompany.atlassian.net",
+        "JIRA_USERNAME": "your@email.com",
+        "JIRA_API_TOKEN": "your_jira_api_token_here"
+      }
+    }
+  }
+}
+```
+
+Open `.claude/settings.json` and fill in the same values under the `env` key:
 
 ```json
 "env": {
@@ -235,15 +189,15 @@ Open `.claude/settings.json` and fill in the same values you put in `.env`:
 }
 ```
 
-> **Why two files?** `.env` is read by your shell. `settings.json` is read by Claude Code to pass tokens to the MCP servers (Jira, Qase). Both need the same values.
+> **Why two files?** `.mcp.json` is read by the MCP server processes at startup. `settings.json` is read by Claude Code to pass the same tokens as environment variables. Both need the same values.
 
-### 7. Create artifact directories
+### 6. Create artifact directories
 
 ```bash
-mkdir -p qa-artifacts/screenshots qa-artifacts/console-logs qa-artifacts/network-logs qa-artifacts/logs qa-artifacts/traces
+mkdir -p qa-artifacts/screenshots qa-artifacts/console-logs qa-artifacts/network-logs qa-artifacts/logs
 ```
 
-### 8. Open in VS Code
+### 7. Open in VS Code
 
 ```bash
 code .
@@ -251,14 +205,14 @@ code .
 
 The Claude Code panel appears in the sidebar. All three MCP servers (Playwright, Qase, Jira) start automatically on first use.
 
-### 9. Verify MCP servers
+### 8. Verify MCP servers
 
 In the Claude Code panel, type `/mcp` to confirm all three servers show as connected:
 - `playwright` — browser automation
 - `qase` — test case management
 - `jira` — bug tracking
 
-If any server fails, check that your tokens in `settings.json` are correct.
+If any server fails, check that your tokens in `.mcp.json` and `settings.json` are correct and match.
 
 ---
 
@@ -269,19 +223,33 @@ If you test against multiple Jira/Qase workspaces, create one settings file per 
 ```bash
 cp .claude/settings.example.json .claude/settings.p1.json
 cp .claude/settings.example.json .claude/settings.p2.json
+cp .claude/mcp.p1.example.json .claude/mcp.p1.json
 ```
 
-Fill each with different credentials. Switch profiles by saying "Profile 1" or "Profile 2" at the start of any command — the agent copies the right file automatically.
+Fill each file with the credentials for that workspace. Switch profiles by saying the profile name at the start of any command — the agent copies the right file automatically:
+
+```
+Profile 1, test it
+App: https://staging.myapp.com
+Feature: Login
+```
+
+| Profile | Jira | Qase |
+|---------|------|------|
+| Profile 1 | yourcompany.atlassian.net / PROJECT-KEY | PROJECT-CODE |
+| Profile 2 | yourcompany.atlassian.net / PROJECT-KEY | PROJECT-CODE |
+| Profile 3 | yourcompany.atlassian.net / PROJECT-KEY | PROJECT-CODE |
+| Profile 4 | yourcompany.atlassian.net / PROJECT-KEY | PROJECT-CODE + Google Docs/Sheets |
 
 ---
 
-### Google Docs / Sheets (optional)
+### Google Docs / Sheets (optional, Profile 4)
 
 Only needed if you want the agent to read requirements from a Google Doc or Sheet.
 
 1. Create a Google Cloud service account and download the JSON key
 2. Save it as `credentials/google-sa.json`
-3. Add to `settings.json`:
+3. Add to `settings.json` env:
 ```json
 "GOOGLE_APPLICATION_CREDENTIALS": "./credentials/google-sa.json",
 "GOOGLE_DOC_ID": "your_doc_id_from_the_url"
@@ -290,32 +258,6 @@ Only needed if you want the agent to read requirements from a Google Doc or Shee
 ---
 
 ## Usage
-
-### Switching Profiles
-
-Just mention the profile name at the start of any command — the agent switches automatically, no file editing needed:
-
-```
-Profile 1, test it
-App: https://staging.myapp.com
-Feature: Login
-
-Profile 2, write it
-Jira: PROJ-42
-
-Profile 3, review it
-Suite: https://app.qase.io/project/PROJ/suite/5
-Jira: PROJ-10
-```
-
-| Profile | Jira | Qase | Google |
-|---------|------|------|--------|
-| Profile 1 | yourcompany.atlassian.net / PROJECT-KEY | PROJECT-CODE | — |
-| Profile 2 | yourcompany.atlassian.net / PROJECT-KEY | PROJECT-CODE | — |
-| Profile 3 | yourcompany.atlassian.net / PROJECT-KEY | PROJECT-CODE | — |
-| Profile 4 | yourcompany.atlassian.net / PROJECT-KEY | PROJECT-CODE | Docs + Sheets |
-
----
 
 ### WAY 1 — Full QA Session
 
@@ -334,23 +276,62 @@ Requirements:
 ```
 test it
 App: https://staging.myapp.com
-Jira: ABC-42
+Jira: PROJ-42
 ```
+
+**What it produces:**
+- Qase test run with pass/fail/blocked results
+- Jira bug reports with numbered repro steps, screenshots, console + network logs
+- Session report saved to `qa-artifacts/session-YYYY-MM-DD-HH-MM.md`
+
+```mermaid
+flowchart LR
+    A([test it]) --> B[Gather Inputs\nURL + Requirements]
+    B --> C[Analyze Requirements\nrequirements-analyzer]
+    C --> D[Write Test Cases\ntest-case-writer\nedge-case-generator]
+    D --> E[Upload to Qase\nCreate Test Run]
+    E --> F[Execute in Browser\nplaywright-navigator]
+    F --> G{Pass?}
+    G -->|Fail| H[Capture Evidence\nScreenshot · Console · Network]
+    H --> I[File to Jira\nseverity-classifier · bug-reporter]
+    I --> F
+    G -->|Pass| F
+    F --> K[Session Summary\ntest-session-reporter]
+    K --> Z([Done])
+```
+
+---
 
 ### WAY 2 — Quick Bug Report
 
 ```
 report it
-AP, Must be logged in, Go to Settings > Click Delete Account > Confirm > Observe: page shows 500 error instead of success message
+Admin Portal, Must be logged in, Go to Settings > Click Delete Account > Confirm > Observe: page shows 500 error instead of success message
 ```
 
 Input format: `[Portal], [Precondition], [Step 1 > Step 2 > Observe: what you saw]`
+
+**What it produces:**
+- Jira bug filed immediately with precondition, steps, actual + expected result, priority
+- Summary printed to chat: Jira key, title, priority, assignee, direct Jira link
+
+```mermaid
+flowchart LR
+    A([report it]) --> B[Parse input\nPortal · Precondition · Steps]
+    B --> C[Derive title\nActual + Expected result]
+    C --> D[Look up assignee\njira_search_users]
+    D --> E[File to Jira\njira_create_issue Bug]
+    E --> F[Print summary\nJira key · title · priority · link]
+    F --> Z([Done])
+```
 
 ---
 
 ### WAY 3 — Write Test Cases Only
 
-**From plain text requirements:**
+Use this before the feature is ready for browser testing — generates and uploads test cases to Qase from requirements alone.
+
+**From plain text:**
 ```
 write it
 Requirements:
@@ -362,27 +343,27 @@ Requirements:
 **From a Jira story:**
 ```
 write it
-Jira: SCRUM-42
+Jira: PROJ-42
 ```
 
 **With optional context:**
 ```
 write it
-Jira: SCRUM-42
+Jira: PROJ-42
 App: https://staging.myapp.com/upload
 Figma: https://figma.com/file/abc123/Upload-Flow
 ```
 
-Optional params (all can be omitted):
-- `App:` — feature URL for UI-aware test step descriptions
+Optional params:
+- `App:` — feature URL for UI-aware test step wording
 - `Figma:` — design reference linked in test case notes
 - `Screenshot:` — path to a screenshot of current UI state
 
-WAY 3 uploads to Qase only — no browser, no Jira bugs. Use it before the feature is ready to test.
+**What it produces:**
+- Qase test cases organized into suites by area
+- Summary saved to `qa-artifacts/testcases-YYYY-MM-DD-HH-MM.md`
 
 ![Example Test Cases Generated](assets/example-tc-generate.png)
-
-### WAY 3 Flow
 
 ```mermaid
 flowchart LR
@@ -403,33 +384,36 @@ flowchart LR
 
 ### WAY 4 — Review Existing Test Cases
 
-**From a Qase suite URL + Jira ticket:**
+Audits an existing Qase suite against requirements, fixes every field, and creates new test cases for any missing scenarios.
+
 ```
 review it
-Suite: https://app.qase.io/project/SWC/suite/5
-Jira: XYZ-42
+Suite: https://app.qase.io/project/PROJ/suite/5
+Jira: PROJ-42
 ```
 
-**From a Qase suite URL + app link:**
 ```
 review it
-Suite: https://app.qase.io/project/SWC/suite/5
+Suite: https://app.qase.io/project/PROJ/suite/5
 App: https://staging.myapp.com/upload
 ```
 
-What it reviews per test case:
-- **Title** — rewritten to be clear and specific
-- **Severity & Priority** — corrected to match business impact
+**What it reviews per test case:**
+- **Title** — rewritten to `Verify [outcome] when [condition]` format
+- **Severity & Priority** — corrected to match business impact (Severity × Priority matrix)
 - **Type** → forced to `Regression`
 - **Layer** → forced to `E2E`
 - **Behavior** → classified as `Positive` or `Negative`
-- **Precondition** — expanded if vague or missing
-- **Steps** — split, clarified, observation step added
+- **Precondition** — expanded if vague; personal data removed (data belongs in Test Data field only)
+- **Steps** — one action per step, imperative form, observation step at end
+- **Expected Result** — added to every step that's missing it
+- **Test Data** — placeholder values added where input is required
 - **Grammar & Spelling** — fixed throughout
 
-After the review, missing scenarios are identified and new test cases are created in the same suite.
-
-### WAY 4 Flow
+**What it produces:**
+- Updated test cases in Qase (every field corrected)
+- New test cases for any missing scenarios
+- Review report saved to `qa-artifacts/review-YYYY-MM-DD-HH-MM.md`
 
 ```mermaid
 flowchart LR
@@ -451,32 +435,46 @@ flowchart LR
 
 ---
 
-## What the Agent Produces
+### WAY 5 — Create QA Jira Tickets from Epic
 
-**WAY 1 (Full QA session):**
-- **Qase Test Run** — all test cases with pass/fail/blocked results
-- **Jira Issues** — one per bug, with numbered repro steps, expected vs actual, environment block
-- **Screenshots** — PNG capture at the exact moment of failure (`qa-artifacts/screenshots/`)
-- **Console logs** — all `console.error` and `console.warn` during the test
-- **Network logs** — HTTP requests/responses including API calls and status codes
-- **Session report** — saved to `qa-artifacts/session-YYYY-MM-DD-HH-MM.md`
+Reads a dev epic, calculates QA story points from the dev SP matrix, and creates all QA tickets ready for sprint planning — without you touching Jira manually.
 
-**WAY 2 (Quick bug report):**
-- **Jira Bug** — filed immediately with precondition, steps, actual + expected result, priority, assignee
-- **Summary** — Jira key, title, priority, assignee, and direct Jira link printed to chat
+```
+create jira
+Epic: PROJ-100
+```
 
-**WAY 3 (Write test cases):**
-- **Qase test cases** — organized into suites, with steps, preconditions, expected results
-- **Test case summary** — saved to `qa-artifacts/testcases-YYYY-MM-DD-HH-MM.md`
+**What it creates:**
+- **1 Test Case Development ticket** — aggregated requirements + Figma links from all child stories
+- **1 Retesting parent ticket** — one sub-task per dev story, all unassigned
+- All tickets moved to backlog so you can pull them into the sprint manually
 
-**WAY 4 (Review test cases):**
-- **Updated Qase test cases** — Title, Severity, Priority, Type, Layer, Behavior, Precondition, Steps all corrected
-- **New test cases** — created for any missing scenarios identified during gap analysis
-- **Review report** — saved to `qa-artifacts/review-YYYY-MM-DD-HH-MM.md`
+Story points are calculated automatically from the dev story SPs using built-in matrices.
+
+**What it produces:**
+- All tickets created in Jira under the epic
+- Summary printed to chat and saved to `qa-artifacts/jira-tickets-YYYY-MM-DD-HH-MM.md`
+
+```mermaid
+flowchart LR
+    A([create jira]) --> B{Epic key\nprovided?}
+    B -->|No| C[Ask user\nbefore proceeding]
+    C --> B
+    B -->|Yes| D[Fetch epic +\nall child stories]
+    D --> E[Calculate\nQA story points\nfrom SP matrix]
+    E --> F[Create TC Dev ticket\naggregate requirements\n+ Figma links]
+    F --> G[Create Retesting\nparent ticket]
+    G --> H[Create sub-task\nper dev story\nunassigned]
+    H --> I[Move all tickets\nto backlog]
+    I --> J[Print summary\n+ save .md file]
+    J --> Z([Done])
+```
 
 ---
 
-## Example Bug Report Filed to Jira
+## Example Output
+
+### Bug Report Filed to Jira
 
 ```
 [File Upload] 15MB file accepted despite 10MB limit
@@ -506,15 +504,35 @@ Upload rejected with error: "File size exceeds the 10MB limit"
 
 ---
 
+## Sub-Agents
+
+Each skill is a specialized instruction file that gives the agent expert-level knowledge for one phase of testing.
+
+| Skill | Used In | What It Does |
+|-------|---------|-------------|
+| `requirements-analyzer` | WAY 1, 3 | Breaks specs into happy paths, edge cases, security scenarios |
+| `acceptance-criteria-parser` | WAY 1, 3 | Converts BDD / user-story criteria into pass/fail conditions |
+| `test-case-writer` | WAY 1, 3 | Generates Qase test cases with steps, preconditions, expected results |
+| `edge-case-generator` | WAY 1, 3 | Adds boundary values, injection payloads, encoding attacks |
+| `playwright-navigator` | WAY 1, 4 | Executes tests in browser, manages waits, captures failures |
+| `bug-reporter` | WAY 1 | Files complete Jira reports: repro steps + expected/actual + artifacts |
+| `severity-classifier` | WAY 1 | Two-axis severity × priority model with auto-escalation for security bugs |
+| `test-session-reporter` | WAY 1 | Closes session, updates Qase, generates stakeholder report |
+| `issue-reporter` | WAY 2 | Parses shorthand input → formats → files Jira bug immediately |
+| `test-case-reviewer` | WAY 4 | Audits existing Qase suite — fix fields, grammar, gaps; create missing cases |
+
+---
+
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| Jira MCP 401 error | Check `JIRA_URL`, `JIRA_USERNAME`, `JIRA_API_TOKEN` in `.env` |
+| Jira MCP 401 error | Check `JIRA_URL`, `JIRA_USERNAME`, `JIRA_API_TOKEN` in `.mcp.json` and `settings.json` |
 | Qase MCP auth fails | Regenerate token in Qase → Settings → API Tokens |
 | Agent goes off-task | Ensure `CLAUDE.md` is in the project root; reload VS Code window |
 | Screenshots not saved | Check `qa-artifacts/screenshots/` exists and is writable |
 | MCP server not connecting | Type `/mcp` in Claude Code panel to verify server status |
+| Profile switch not working | Ensure `settings.pN.json` and `mcp.pN.json` exist in `.claude/` with correct credentials |
 
 ---
 

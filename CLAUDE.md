@@ -323,14 +323,20 @@ If Jira uses a custom field for story points (commonly `story_points` or `custom
 3. For each child, extract:
    - Key, summary, issue type, status, **story points**
    - Description, acceptance criteria, Figma links, comments
-4. Exclude any existing QA-type tickets from the children list — only process dev stories/tasks/sub-tasks
-5. Sum all child story points — use this total to calculate the Test Case Development ticket's SP
+4. Separate into two lists:
+   - **Dev tickets** (non-QA type) — these are processed to create QA tickets
+   - **Existing QA tickets** — note them, do NOT create duplicates against them
+5. Sum all dev child story points — use this total for the TC Dev SP matrix
+
+**CRITICAL — Duplicate prevention:** Before creating any QA ticket, search for an existing QA ticket with the same summary pattern under the same epic. If one already exists, skip creation and note it in the summary. Never create two QA tickets for the same dev ticket.
 
 ---
 
 ### Phase 2: Create ONE Test Case Development Ticket (per epic)
 
-Create a single `[QA] Test Case Development` ticket linked to the epic:
+Check first: if a `[QA] Test Case Development –` ticket already exists under this epic, skip and note it. Do not create a duplicate.
+
+If it does not exist, create:
 
 - **Summary:** `[QA] Test Case Development – <epic summary>`
 - **Issue Type:** QA
@@ -338,58 +344,82 @@ Create a single `[QA] Test Case Development` ticket linked to the epic:
 - **Assignee:** requesting user (default)
 - **Sprint:** active sprint
 - **Priority:** Medium
-- **Story Points:** Calculate using the Test Case Development SP matrix above (based on sum of all child dev SPs)
-- **Description:** Compile ALL of the following collected from the epic AND every child story/task/sub-task:
+- **Story Points:** TC Dev SP matrix (based on sum of all child dev SPs)
+- **Description:** Compile ALL of the following from the epic AND every child dev story/task:
   - Epic description + acceptance criteria
-  - Each child's summary, description, and acceptance criteria (labelled by key, e.g. "LSY-3019 — Add workflow steps")
-  - All Figma links found (epic + all children), listed clearly
-  - Any other design or spec links found in descriptions or comments
-- **Remote Links (Jira link section):** Add each Figma link and any spec/design URL as a remote link on the ticket
+  - Each child's key, summary, description, and acceptance criteria (labelled, in key order)
+  - All Figma links found (epic + all children) in a "Design References" section
+  - Any other spec/design links from descriptions or comments
+- **Remote Links:** Add each Figma/spec URL as a remote link on the ticket
 - **Linked Issues:** Link to the epic key (Relates)
 
 ---
 
-### Phase 3: Create ONE Retest Ticket per Child Story/Task/Sub-task
+### Phase 3: Create ONE Retesting Parent Ticket + ONE Sub-task per Dev Story
 
-For **each** child dev story/task/sub-task, create one `[QA] Retest` ticket:
+This is the ONLY structure. There is no alternative. Always follow this exactly:
 
-- **Summary:** `[QA] Retest – <child story summary>`
+**Step 1 — Check for existing Retesting parent ticket.**
+If a `[QA] Retesting –` or `[QA] Testing –` ticket already exists under this epic, use it as the parent. Do NOT create a second one.
+
+If it does not exist, create:
+
+- **Summary:** `[QA] Retesting – <epic summary>`
 - **Issue Type:** QA
-- **Parent:** the epic key (since QA type is typically at the same hierarchy level as stories)
-- **Assignee:** requesting user (default)
+- **Parent:** the epic key
+- **Assignee:** requesting user
 - **Sprint:** active sprint
 - **Priority:** Medium
-- **Story Points:** Calculate using the Retest SP matrix above (based on that child story's SP)
-- **Description:** Compile from the RELEVANT child ticket only:
-  - Child's summary, description, acceptance criteria
-  - Figma links found in the child ticket
-  - Any spec/design links from the child's description or comments
-  - Reference: "Retest for <child-key> — <child summary>"
-- **Remote Links:** Add each Figma link and spec/design URL found in the child ticket as a remote link
-- **Linked Issues:** Link to the child story key (Relates)
+- **Story Points:** Sum of all sub-task SPs (update after sub-tasks are created)
+- **Description:** Compiled summary of ALL dev ticket descriptions — one section per dev ticket, labelled by key and summary, in key order
+- **Linked Issues:** Link to the epic key (Relates)
+
+**Step 2 — For each dev story/task, create ONE sub-task under the Retesting parent.**
+
+Before creating: check if a sub-task for this dev story already exists under the Retesting parent. If yes, skip it.
+
+If it does not exist, create:
+
+- **Summary:** `[QA] Retesting – <child story summary>`
+- **Issue Type:** Sub-task (child of the Retesting parent ticket)
+- **Parent:** the Retesting parent ticket
+- **Assignee:** unassigned — NEVER assign sub-tasks, always leave blank
+- **Sprint:** inherit from parent or set explicitly
+- **Priority:** Medium
+- **Story Points:** Retest SP matrix (based on that child's dev SP)
+- **Description:** The dev story's own description and acceptance criteria — copy directly from the dev ticket (labelled with dev key + summary). Include Figma links from the dev ticket.
+- **Linked Issues:** Link to the child dev story key (Relates)
+
+**Step 3 — Update Retesting parent SP** to equal sum of all sub-task SPs.
 
 ---
 
-### Phase 4: Summary
+### Phase 4: Move All Tickets to Backlog
+
+After all tickets are created, clear the sprint field (`customfield_10020` = null) on every newly created ticket. The user will pull tickets into a sprint manually. Do not skip this step.
+
+---
+
+### Phase 5: Summary
 
 Print to terminal and save to `./qa-artifacts/jira-tickets-[YYYY-MM-DD-HH-MM].md`:
 
 ```
 Epic: <EPIC-KEY> — <epic summary>
-Children found: N dev stories/tasks | Total Dev SP: N
+Dev stories found: N | Total Dev SP: N
 
-Test Case Development ticket: <KEY> — <title> — SP: N — <URL>
+[QA] Test Case Development: <KEY> — SP: N — <new/existing> — <URL>
 
-Retest tickets created (1 per child story):
-  <child-key> (Dev SP: N) → <QA-KEY> — <title> — SP: N — <URL>
-  ...
+[QA] Retesting parent: <KEY> — SP: N — Assigned: <name> — <new/existing> — <URL>
+  Sub-tasks (all Unassigned):
+    <dev-key> (Dev SP: N) → <QA-KEY> — SP: N — <new/skipped> — <URL>
+    ...
 
-Sprint: <sprint name>
-Assignee: <name>
-Total tickets created: N
-Total QA SP assigned: N
-Figma links collected: N (list them)
-Story point field: set / unavailable (note which)
+All tickets moved to backlog: yes / errors listed
+Assignee: TC Dev + Retesting parent = <name> | Sub-tasks = Unassigned
+Total new tickets created: N
+Total QA SP: N
+Figma links: N found (list them)
 Errors: none / list any
 ```
 

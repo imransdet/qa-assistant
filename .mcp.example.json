@@ -10,7 +10,7 @@
       "command": "npx",
       "args": ["-y", "@qase/mcp-server"],
       "env": {
-        "QASE_API_TOKEN": "your_qase_api_token"
+        "QASE_API_TOKEN": "your_qase_api_token_here"
       }
     },
     "jira": {
@@ -20,7 +20,7 @@
       "env": {
         "JIRA_URL": "https://yourcompany.atlassian.net",
         "JIRA_USERNAME": "your@email.com",
-        "JIRA_API_TOKEN": "your_jira_api_token"
+        "JIRA_API_TOKEN": "your_jira_api_token_here"
       }
     }
   }

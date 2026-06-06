@@ -12,14 +12,15 @@
 .claude/settings.local.json
 .claude/settings.p*.json
 
-# Claude Code MCP profile configs contain API tokens — use mcp.p*.example.json as templates
-.claude/mcp.p1.json
-.claude/mcp.p2.json
-.claude/mcp.p3.json
-.claude/mcp.p4.json
+# Claude Code MCP profile configs contain API tokens — use .claude/mcp.p*.example.json as templates
+.claude/mcp.p*.json
 
 # Google service account private key
 credentials/
+
+# Utility scripts with hardcoded credentials — for local use only
+create_retest_tickets.py
+link_and_backlog.py
 
 # ─── Runtime & generated ──────────────────────────────────────
 # Playwright MCP session logs
