@@ -218,6 +218,8 @@ If any server fails, check that your tokens in `.mcp.json` and `settings.json` a
 
 ### Multiple Profiles (optional)
 
+> **Note:** If you only work with one Jira and one Qase workspace, you don't need profiles at all — the credentials you set in `settings.json` and `.mcp.json` during setup are enough. Profiles are only useful when you switch between different workspaces regularly.
+
 If you test against multiple Jira/Qase workspaces, create one settings file per profile:
 
 ```bash
