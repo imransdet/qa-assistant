@@ -6,6 +6,26 @@ An autonomous QA agent that runs inside VS Code. Give it a staging URL and a fea
 
 ---
 
+## Contents
+
+- [What It Does](#what-it-does)
+- [Five Modes](#five-modes)
+- [Architecture](#architecture)
+- [Knowledge Base](#knowledge-base) — the agent's product memory
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Setup](#setup) ← **start here to run it**
+- [Usage](#usage) — WAY 1–5 with examples
+- [Example Output](#example-output)
+- [Sub-Agents](#sub-agents)
+- [Roadmap](#roadmap)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+
+> **New here?** Read [What It Does](#what-it-does), then jump straight to [Setup](#setup) — it's a numbered, copy-paste walkthrough that gets you running in ~10 minutes.
+
+---
+
 ## What It Does
 
 ```
@@ -58,7 +78,9 @@ flowchart TD
 
 ---
 
-## Knowledge Base — the agent's product memory
+## Knowledge Base
+
+*The agent's product memory.*
 
 By default an AI test agent starts every session cold: it only knows the feature description and staging URL you give it that run. The `knowledge-base/` folder fixes that — it's persistent product memory the agent loads automatically before analyzing any requirements (WAY 1, 3, 4).
 
@@ -562,6 +584,27 @@ Each skill is a specialized instruction file that gives the agent expert-level k
 | `test-session-reporter` | WAY 1 | Closes session, updates Qase, generates stakeholder report |
 | `issue-reporter` | WAY 2 | Parses shorthand input → formats → files Jira bug immediately |
 | `test-case-reviewer` | WAY 4 | Audits existing Qase suite — fix fields, grammar, gaps; create missing cases |
+
+---
+
+## Roadmap
+
+What's shipped and what's planned. Items are ordered by priority — the next one to be built is at the top of "Planned". Contributions and issues are welcome.
+
+### Shipped
+- ✅ **Persistent, per-product Knowledge Base** — product flows, business rules, feature map, and known defects, auto-loaded per profile (`knowledge-base/<QASE_PROJECT>/`)
+- ✅ **Compounding knowledge** — the agent proposes KB updates at the end of each WAY 1 session, and learns facts on demand
+- ✅ **Bug confidence tiers** — `Confirmed` (violates a documented business rule) vs `Suspected` (heuristic only)
+
+### Planned
+1. **Bug approval gate** — auto-file only `Confirmed` defects; hold `Suspected` ones in a review list for sign-off before filing. Optional `draft mode` so teams that don't want full autonomy approve test cases before they hit Qase.
+2. **Expand ingested context** — accept an OpenAPI/Swagger spec so test cases assert real status codes and schemas; actually read linked Figma frames (currently referenced only); pull existing Qase cases in WAY 1 to avoid regenerating duplicates.
+3. **Measurement & metrics** — append a metrics block to each session report (cases created, pass/fail/blocked, bugs by confidence tier, run time); maintain a running `qa-artifacts/metrics.csv`; track false-positive rate by reconciling filed bugs against their final Jira resolution.
+4. **Knowledge-base bulk backfill** — point the agent at a Jira epic or a set of closed bugs and have it harvest business rules and historical defects into a product's KB in one pass, so a mature product gets a rich KB on day one.
+5. **Profile / link mismatch guard** — warn when a pasted Qase or Jira link's project code doesn't match the active profile's `QASE_PROJECT`, catching "wrong profile" mistakes before the wrong knowledge loads.
+
+### Out of scope
+- **Cross-repo / cross-service regression analysis** — requires codebase, CI, and dependency-graph access; that's a different class of tool. This agent's regression scope stays bounded to the staging URL or Qase suite you point it at.
 
 ---
 
