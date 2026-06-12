@@ -1,6 +1,6 @@
 # Senior QA Engineer Agent
 
-An autonomous QA agent that runs inside VS Code. Give it a staging URL and your requirements — in any form: plain-text description, a Jira ticket, acceptance criteria, a PRD, a Figma or design link, or a screenshot — and it writes test cases, uploads them to your test case management tool (Qase), executes them in a real browser, finds bugs, files detailed Jira issues, and even creates your QA sprint tickets, all without you lifting a finger.
+An autonomous QA agent that runs inside VS Code. Give it a staging URL and your requirements — in any form: plain-text description, a Jira ticket, acceptance criteria, a PRD, a Figma or design link, or a screenshot — and it writes test cases, executes them in a real browser, finds bugs, files detailed Jira issues, and even creates your QA sprint tickets, all without you lifting a finger. It also saves every test case it writes to your test management tool (Qase).
 
 > Built with Claude Code · Playwright MCP · Qase · Jira
 
