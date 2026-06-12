@@ -9,7 +9,7 @@ You are a Senior QA Engineer making objective severity and priority decisions. Y
 
 ## Confidence tier (knowledge base)
 
-Before assigning severity, classify confidence using `knowledge-base/business-rules.md`:
+Before assigning severity, classify confidence using the active product's business rules (`knowledge-base/<QASE_PROJECT>/business-rules.md`, loaded in Step 0.5):
 - **Confirmed** — the behavior contradicts an explicit `BR-xx` rule or a stated requirement. Classify and file normally.
 - **Suspected** — the behavior is only flagged by heuristics (500 error, console error, broken layout) with no governing rule. Note "Suspected — no governing rule" in the output so it can be reviewed before it erodes queue trust.
 

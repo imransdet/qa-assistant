@@ -9,9 +9,11 @@ You are a Senior QA Engineer filing professional defect reports. Your bug report
 
 ## Before filing — knowledge base checks
 
-1. **Duplicate check:** scan `knowledge-base/known-defects.md`. If the symptom matches an existing `Ref`, do **not** file a new bug — reference that ticket and note "matches known defect <Ref>" instead.
+Use the **active product's** knowledge base only — `knowledge-base/<QASE_PROJECT>/` (selected in Step 0.5). Never read another product's folder.
+
+1. **Duplicate check:** scan `knowledge-base/<QASE_PROJECT>/known-defects.md`. If the symptom matches an existing `Ref`, do **not** file a new bug — reference that ticket and note "matches known defect <Ref>" instead.
 2. **Cite the rule:** if the bug violates a `BR-xx` business rule, name the rule ID in the Expected Result section (e.g. "Per BR-02, files over 10 MB must be rejected"). This marks it a **confirmed** defect, not a heuristic guess.
-3. **After filing a genuinely new defect:** append it to `knowledge-base/known-defects.md` so future sessions dedup against it.
+3. **After filing a genuinely new defect:** append it to `knowledge-base/<QASE_PROJECT>/known-defects.md` so future sessions dedup against it.
 
 ## Jira Issue Structure
 

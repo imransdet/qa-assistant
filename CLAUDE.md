@@ -35,18 +35,27 @@ Before doing anything else, scan the user's message for a profile name:
 
 ## Step 0.5 — Load Knowledge Base (runs before any requirements analysis)
 
-The `knowledge-base/` folder is the agent's **persistent product memory**. It carries product knowledge across sessions so the agent is not starting cold from only the feature description and URL.
+The `knowledge-base/` folder is the agent's **persistent, per-product memory**. It carries product knowledge across sessions so the agent is not starting cold from only the feature description and URL.
+
+**Knowledge is per-product; skills are global.** Sub-agents in `.claude/agents/` are *how* to test — shared across every product. The knowledge base is *what* a specific product does — and each product keeps its own folder so knowledge never leaks between products.
+
+**Each product's folder is keyed by its Qase project code (`QASE_PROJECT`).** The active profile already sets `QASE_PROJECT`, so the correct knowledge base is selected automatically:
+- Profile 2 (Beevo, `QASE_PROJECT=LSY`) → `knowledge-base/LSY/`
+- Profile 3 (Showcase, `QASE_PROJECT=SWC`) → `knowledge-base/SWC/`
+- Profile 4 (Showcase AD, `QASE_PROJECT=AD`) → `knowledge-base/AD/`
 
 **When this step runs:** at the start of any WAY that analyzes requirements — **WAY 1, WAY 3, and WAY 4**. Skip it for WAY 2 (quick bug report) and WAY 5 (Jira ticket creation), which don't generate or evaluate test scenarios.
 
 **What to do:**
-1. Read all four files if they exist:
-   - `knowledge-base/product-flows.md` — real navigation flows
-   - `knowledge-base/business-rules.md` — the authoritative bug-vs-intended oracle
-   - `knowledge-base/feature-map.md` — feature dependencies / blast radius
-   - `knowledge-base/known-defects.md` — historical weak spots and filed tickets
-2. Hold this content as context for every sub-agent that follows (`requirements-analyzer`, `test-case-writer`, `edge-case-generator`, `playwright-navigator`, `severity-classifier`, `bug-reporter`, `test-case-reviewer`).
-3. If the folder or a file is missing or empty, continue silently — the KB is optional and additive. Never block a session because the KB is absent.
+1. Determine the active product's Qase project code from `QASE_PROJECT` in `.claude/settings.json`.
+2. Read all four files from `knowledge-base/<QASE_PROJECT>/` if the folder exists:
+   - `product-flows.md` — real navigation flows
+   - `business-rules.md` — the authoritative bug-vs-intended oracle
+   - `feature-map.md` — feature dependencies / blast radius
+   - `known-defects.md` — historical weak spots and filed tickets
+3. Hold this content as context for every sub-agent that follows (`requirements-analyzer`, `test-case-writer`, `edge-case-generator`, `playwright-navigator`, `severity-classifier`, `bug-reporter`, `test-case-reviewer`).
+4. **Never load another product's folder.** Only `knowledge-base/<QASE_PROJECT>/` is in scope for the session.
+5. If the product folder or a file is missing or empty, continue silently — the KB is optional and additive. Never block a session because the KB is absent. You may note once that no KB exists for this product yet and suggest `cp -r knowledge-base/_TEMPLATE knowledge-base/<QASE_PROJECT>` to start one.
 
 **How the KB changes behavior:**
 - **Business rules outrank heuristics.** If observed behavior contradicts a `BR-xx` rule, it is a **confirmed** defect — cite the rule ID in the bug report. If behavior is unusual but matches a rule, it is **not** a bug.
@@ -54,7 +63,20 @@ The `knowledge-base/` folder is the agent's **persistent product memory**. It ca
 - **Feature map drives regression scope:** include a feature's `Used by` chain as regression-risk areas in the testing scope.
 - **Known defects drive probing & dedup:** generate extra edge cases around `Open`/`Intermittent` entries; before filing a bug, check `known-defects.md` and reference an existing `Ref` instead of filing a duplicate.
 
-**After a session:** when a real new defect is confirmed, append it to `knowledge-base/known-defects.md` so the next session benefits. When a flow or rule changes, update the relevant file.
+---
+
+## Step 0.6 — Grow the Knowledge Base (runs at the end of every WAY 1 session)
+
+The knowledge base must **compound** — each session should leave the agent smarter for the next one. At the end of WAY 1 (during `test-session-reporter`), propose updates to the active product's `knowledge-base/<QASE_PROJECT>/` files:
+
+- **New confirmed defect** → append a row to `known-defects.md` (Ref = the Jira key just filed, Area, Symptom, Status=Open, Note for agent)
+- **New flow exercised** that wasn't documented → add it to `product-flows.md`
+- **New rule learned** from the Jira ticket or observed enforcement → add a `BR-xx` row to `business-rules.md`
+- **New dependency discovered** → update `feature-map.md`
+
+Present the proposed additions as a short diff and apply them (the profiles run in `bypassPermissions`, so write the files directly, then report what was added in the session summary). Never invent facts — only record what the session actually established.
+
+**On-demand learning:** if the user states a product fact at any time (e.g. "the upload limit is now 20 MB"), write it into the correct file of the active product's KB and confirm where it was saved.
 
 ---
 

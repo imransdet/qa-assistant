@@ -62,6 +62,22 @@ flowchart TD
 
 By default an AI test agent starts every session cold: it only knows the feature description and staging URL you give it that run. The `knowledge-base/` folder fixes that — it's persistent product memory the agent loads automatically before analyzing any requirements (WAY 1, 3, 4).
 
+**Knowledge is per-product; skills are global.** Sub-agents in `.claude/agents/` are *how* to test (shared everywhere). The knowledge base is *what* a specific product does — so each product gets its own folder, named by its **Qase project code** and auto-selected by the active profile. Beevo's rules never leak into a Showcase session.
+
+```
+knowledge-base/
+├── _TEMPLATE/     ← copy to start a new product KB
+├── LSY/           ← Profile 2 (Beevo)
+├── SWC/           ← Profile 3 (Showcase)
+└── AD/            ← Profile 4 (Showcase AD)
+```
+
+Start a product's KB by copying the template (use your Qase project code):
+
+```bash
+cp -r knowledge-base/_TEMPLATE knowledge-base/SWC
+```
+
 | File | Answers | What it changes |
 |------|---------|-----------------|
 | `product-flows.md` | How do users actually move through the product? | Grounds happy-path tests in real navigation, not guesses |
@@ -69,7 +85,9 @@ By default an AI test agent starts every session cold: it only knows the feature
 | `feature-map.md` | What depends on what? | Adds regression-risk areas (a feature's `Used by` chain) to every test scope |
 | `known-defects.md` | Where has this product broken before? | Probes historical weak spots harder; prevents duplicate bug reports |
 
-**Why it matters:** with the knowledge base, the agent can tell a *confirmed* defect (violates a documented `BR-xx` rule) from a *suspected* one (heuristic only), avoids re-filing known bugs, and widens coverage into connected features. Start with a few entries per file — even a small KB makes the agent noticeably sharper. It's optional and additive: if the folder is empty, the agent falls back to spec-only analysis. See `knowledge-base/README.md` for the format.
+**It compounds.** At the end of every WAY 1 session the agent proposes knowledge-base updates for that product — new confirmed defects, new flows, new rules learned — so each run leaves it smarter for the next. You can also just tell it a fact ("the upload limit is now 20 MB") and it files it into the right product's KB.
+
+**Why it matters:** with the knowledge base, the agent can tell a *confirmed* defect (violates a documented `BR-xx` rule) from a *suspected* one (heuristic only), avoids re-filing known bugs, and widens coverage into connected features. Start with a few entries per file — even a small KB makes the agent noticeably sharper. It's optional and additive: if a product has no folder yet, the agent falls back to spec-only analysis. See `knowledge-base/README.md` for the format.
 
 ---
 
@@ -93,11 +111,13 @@ By default an AI test agent starts every session cold: it only knows the feature
 qa-agent/
 ├── CLAUDE.md                          # Agent brain — full workflow + trigger keywords
 ├── README.md                          # This file
-├── knowledge-base/                    # Persistent product memory (loaded every session)
-│   ├── product-flows.md               # Real navigation flows
-│   ├── business-rules.md              # Authoritative bug-vs-intended oracle
-│   ├── feature-map.md                 # Feature dependencies / blast radius
-│   └── known-defects.md               # Historical weak spots + filed tickets
+├── knowledge-base/                    # Persistent product memory — one folder per product
+│   ├── _TEMPLATE/                     # Copy this to start a new product's KB
+│   │   ├── product-flows.md           # Real navigation flows
+│   │   ├── business-rules.md          # Authoritative bug-vs-intended oracle
+│   │   ├── feature-map.md             # Feature dependencies / blast radius
+│   │   └── known-defects.md           # Historical weak spots + filed tickets
+│   └── <QASE_PROJECT>/                # e.g. LSY/, SWC/, AD/ — auto-selected by profile
 ├── .env.example                       # Template — copy to .env and fill in your tokens
 ├── .mcp.example.json                  # Template — copy to .mcp.json and fill in your tokens
 ├── .mcp.json                          # Active MCP config (gitignored — created from .mcp.example.json)

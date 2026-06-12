@@ -16,7 +16,19 @@ Before generating the report, verify:
 □ All failed test cases are linked to their Jira issue in Qase
 □ All artifacts are saved and organized in ./qa-artifacts/
 □ The test run is marked as complete in Qase
+□ The active product's knowledge base has been updated with what this session learned
 ```
+
+## Grow the Knowledge Base (Step 0.6)
+
+Before finishing, compound the active product's memory in `knowledge-base/<QASE_PROJECT>/` so the next session starts smarter. Only record facts this session actually established — never invent.
+
+- **New confirmed defect** → append a row to `known-defects.md`: `Ref` = the Jira key filed, `Area` (cite FEAT-xx/FLOW-xx), `Symptom`, `Status` = Open, `Note for agent`.
+- **New flow exercised** not already documented → add it to `product-flows.md`.
+- **New business rule** learned from the ticket or observed enforcement → add a `BR-xx` row to `business-rules.md`.
+- **New dependency / external service** discovered → update `feature-map.md`.
+
+Write the files directly (profiles run in `bypassPermissions`), then list every knowledge-base addition in the session report under a "Knowledge Base Updates" heading. If no product KB folder exists yet, suggest creating one with `cp -r knowledge-base/_TEMPLATE knowledge-base/<QASE_PROJECT>`.
 
 ## Qase Result Update Protocol
 
