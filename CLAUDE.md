@@ -317,7 +317,7 @@ For every test case, check and update via Qase MCP:
 
 ## WAY 5 — Create QA Jira Tickets from Epic
 
-**Trigger keywords:** `create jira`, `create qa tickets`, `jira tickets for epic`, `create tickets`
+**Trigger keywords:** `create it`, `create jira`, `create qa tickets`, `jira tickets for epic`, `create tickets`
 
 ### Step 0: Gather Inputs
 
@@ -509,4 +509,4 @@ Errors: none / list any
 | User says "report it" | `issue-reporter` | WAY 2 triggered |
 | User says "write it" | `requirements-analyzer` → `test-case-writer` → `edge-case-generator` | WAY 3 triggered |
 | User says "review it" | `test-case-reviewer` | WAY 4 triggered |
-| User says "create jira" / "create qa tickets" | Jira MCP directly (no sub-agent needed) | WAY 5 triggered |
+| User says "create it" / "create jira" | Jira MCP directly (no sub-agent needed) | WAY 5 triggered |

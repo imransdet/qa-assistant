@@ -1,10 +1,10 @@
-# Knowledge Base
+# Knowledge Base — Guide
 
 This folder is the agent's **persistent, per-product memory**. Without it, every QA session starts cold — the agent only knows the feature description and staging URL you hand it that session. With it, the agent understands a product's flows, rules, feature relationships, and historical weak spots *before* it writes a single test case.
 
 ## One knowledge base per product — keyed by Qase project code
 
-If you test multiple products, their knowledge must stay separate — Beevo's business rules must never leak into a Showcase session. So each product gets its own folder, named by its **Qase project code** (the `QASE_PROJECT` set by the active profile):
+If you test multiple products, their knowledge must stay separate — one product's business rules must never leak into another product's session. So each product gets its own folder, named by its **Qase project code** (the `QASE_PROJECT` set by the active profile):
 
 ```
 knowledge-base/
@@ -13,9 +13,9 @@ knowledge-base/
 │   ├── business-rules.md
 │   ├── feature-map.md
 │   └── known-defects.md
-├── LSY/                ← Profile 2 (Beevo) knowledge
-├── SWC/                ← Profile 3 (Showcase) knowledge
-└── AD/                 ← Profile 4 (Showcase AD) knowledge
+├── SHOP/               ← Profile 1 (e.g. your e-commerce app) knowledge
+├── CRM/                ← Profile 2 (e.g. your CRM) knowledge
+└── BLOG/               ← Profile 3 (e.g. your docs portal) knowledge
 ```
 
 At the start of any analysis session, the agent loads **only** `knowledge-base/<QASE_PROJECT>/` (see `CLAUDE.md` → Step 0.5). Skills in `.claude/agents/` stay global and shared — they are *how* to test. The knowledge base is *what* a specific product does.
@@ -23,7 +23,7 @@ At the start of any analysis session, the agent loads **only** `knowledge-base/<
 ## Start a knowledge base for a product
 
 ```bash
-cp -r knowledge-base/_TEMPLATE knowledge-base/SWC   # use your Qase project code
+cp -r knowledge-base/_TEMPLATE knowledge-base/SHOP   # use your own Qase project code
 ```
 
 Then open the four files and replace the example content with that product's real flows, rules, dependencies, and known defects. Even 3–4 real entries per file makes the agent noticeably sharper. If a product has no folder yet, the agent falls back to spec-only analysis — the KB is always additive, never required.
@@ -49,7 +49,7 @@ After a month of testing one product, its folder becomes a genuine product encyc
 
 ## Privacy note
 
-These files contain a product's business logic. The `_TEMPLATE` content is generic and safe to commit. If your real product KBs are sensitive, gitignore the product folders (keep `_TEMPLATE/` and this README for others):
+These files contain a product's business logic. The `_TEMPLATE` content is generic and safe to commit. If your real product KBs are sensitive, gitignore the product folders (keep `_TEMPLATE/` and this guide for others):
 
 ```gitignore
 knowledge-base/*/

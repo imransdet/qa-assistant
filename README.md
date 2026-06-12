@@ -52,7 +52,7 @@ Runs entirely inside VS Code. No extra tools, no dashboards, no context-switchin
 | **WAY 2** — Quick Bug Report | `report it` | Parse your shorthand input → format → file to Jira → print summary |
 | **WAY 3** — Write Test Cases | `write it` | Analyze requirements → generate test cases → upload to Qase → summary |
 | **WAY 4** — Review Test Cases | `review it` | Audit & improve existing Qase suite → fix fields → fill gaps → summary |
-| **WAY 5** — Create QA Jira Tickets | `create jira` | Fetch epic → create Test Case Dev ticket + Retesting parent + sub-tasks → move to backlog |
+| **WAY 5** — Create QA Jira Tickets | `create it` | Fetch epic → create Test Case Dev ticket + Retesting parent + sub-tasks → move to backlog |
 
 ---
 
@@ -68,7 +68,7 @@ flowchart TD
     APP[Staging App]
     FS[qa-artifacts\nScreenshots and Logs]
 
-    User -->|"test it / report it / write it / review it / create jira"| CC
+    User -->|"test it / report it / write it / review it / create it"| CC
     CC -->|"navigate · click · capture"| PW
     CC -->|"create suites · mark results"| QA
     CC -->|"file issues · attach evidence"| JR
@@ -84,20 +84,20 @@ flowchart TD
 
 By default an AI test agent starts every session cold: it only knows the feature description and staging URL you give it that run. The `knowledge-base/` folder fixes that — it's persistent product memory the agent loads automatically before analyzing any requirements (WAY 1, 3, 4).
 
-**Knowledge is per-product; skills are global.** Sub-agents in `.claude/agents/` are *how* to test (shared everywhere). The knowledge base is *what* a specific product does — so each product gets its own folder, named by its **Qase project code** and auto-selected by the active profile. Beevo's rules never leak into a Showcase session.
+**Knowledge is per-product; skills are global.** Sub-agents in `.claude/agents/` are *how* to test (shared everywhere). The knowledge base is *what* a specific product does — so each product gets its own folder, named by its **Qase project code** and auto-selected by the active profile. One product's rules never leak into another product's session.
 
 ```
 knowledge-base/
 ├── _TEMPLATE/     ← copy to start a new product KB
-├── LSY/           ← Profile 2 (Beevo)
-├── SWC/           ← Profile 3 (Showcase)
-└── AD/            ← Profile 4 (Showcase AD)
+├── SHOP/          ← Profile 1 (e.g. your e-commerce app)
+├── CRM/           ← Profile 2 (e.g. your CRM)
+└── BLOG/          ← Profile 3 (e.g. your docs portal)
 ```
 
-Start a product's KB by copying the template (use your Qase project code):
+Start a product's KB by copying the template (use your own Qase project code):
 
 ```bash
-cp -r knowledge-base/_TEMPLATE knowledge-base/SWC
+cp -r knowledge-base/_TEMPLATE knowledge-base/SHOP
 ```
 
 | File | Answers | What it changes |
@@ -109,7 +109,7 @@ cp -r knowledge-base/_TEMPLATE knowledge-base/SWC
 
 **It compounds.** At the end of every WAY 1 session the agent proposes knowledge-base updates for that product — new confirmed defects, new flows, new rules learned — so each run leaves it smarter for the next. You can also just tell it a fact ("the upload limit is now 20 MB") and it files it into the right product's KB.
 
-**Why it matters:** with the knowledge base, the agent can tell a *confirmed* defect (violates a documented `BR-xx` rule) from a *suspected* one (heuristic only), avoids re-filing known bugs, and widens coverage into connected features. Start with a few entries per file — even a small KB makes the agent noticeably sharper. It's optional and additive: if a product has no folder yet, the agent falls back to spec-only analysis. See `knowledge-base/README.md` for the format.
+**Why it matters:** with the knowledge base, the agent can tell a *confirmed* defect (violates a documented `BR-xx` rule) from a *suspected* one (heuristic only), avoids re-filing known bugs, and widens coverage into connected features. Start with a few entries per file — even a small KB makes the agent noticeably sharper. It's optional and additive: if a product has no folder yet, the agent falls back to spec-only analysis. See the **[Knowledge Base guide](knowledge-base/GUIDE.md)** for the file format and growth workflow.
 
 ---
 
@@ -134,12 +134,13 @@ qa-agent/
 ├── CLAUDE.md                          # Agent brain — full workflow + trigger keywords
 ├── README.md                          # This file
 ├── knowledge-base/                    # Persistent product memory — one folder per product
+│   ├── GUIDE.md                       # How the knowledge base works + growth workflow
 │   ├── _TEMPLATE/                     # Copy this to start a new product's KB
 │   │   ├── product-flows.md           # Real navigation flows
 │   │   ├── business-rules.md          # Authoritative bug-vs-intended oracle
 │   │   ├── feature-map.md             # Feature dependencies / blast radius
 │   │   └── known-defects.md           # Historical weak spots + filed tickets
-│   └── <QASE_PROJECT>/                # e.g. LSY/, SWC/, AD/ — auto-selected by profile
+│   └── <QASE_PROJECT>/                # e.g. SHOP/, CRM/, BLOG/ — auto-selected by profile
 ├── .env.example                       # Template — copy to .env and fill in your tokens
 ├── .mcp.example.json                  # Template — copy to .mcp.json and fill in your tokens
 ├── .mcp.json                          # Active MCP config (gitignored — created from .mcp.example.json)
@@ -504,7 +505,7 @@ flowchart LR
 Reads a dev epic, calculates QA story points from the dev SP matrix, and creates all QA tickets ready for sprint planning — without you touching Jira manually.
 
 ```
-create jira
+create it
 Epic: PROJ-100
 ```
 
@@ -521,7 +522,7 @@ Story points are calculated automatically from the dev story SPs using built-in 
 
 ```mermaid
 flowchart LR
-    A([create jira]) --> B{Epic key\nprovided?}
+    A([create it]) --> B{Epic key\nprovided?}
     B -->|No| C[Ask user\nbefore proceeding]
     C --> B
     B -->|Yes| D[Fetch epic +\nall child stories]
