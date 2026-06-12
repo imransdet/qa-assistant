@@ -1,6 +1,6 @@
 # Senior QA Engineer Agent
 
-An autonomous QA agent that runs inside VS Code. Give it a staging URL and a feature description — it writes test cases, executes them in a real browser, finds bugs, files detailed Jira issues, and even creates your QA sprint tickets, all without you lifting a finger.
+An autonomous QA agent that runs inside VS Code. Give it a staging URL and your requirements — in any form: plain-text description, a Jira ticket, acceptance criteria, a PRD, a Figma or design link, or a screenshot — and it writes test cases, executes them in a real browser, finds bugs, files detailed Jira issues, and even creates your QA sprint tickets, all without you lifting a finger.
 
 > Built with Claude Code · Playwright MCP · Qase · Jira
 
@@ -82,7 +82,7 @@ flowchart TD
 
 *The agent's product memory.*
 
-By default an AI test agent starts every session cold: it only knows the feature description and staging URL you give it that run. The `knowledge-base/` folder fixes that — it's persistent product memory the agent loads automatically before analyzing any requirements (WAY 1, 3, 4).
+By default an AI test agent starts every session cold: it only knows the requirements and staging URL you give it that run. The `knowledge-base/` folder fixes that — it's persistent product memory the agent loads automatically before analyzing any requirements (WAY 1, 3, 4).
 
 **Knowledge is per-product; skills are global.** Sub-agents in `.claude/agents/` are *how* to test (shared everywhere). The knowledge base is *what* a specific product does — so each product gets its own folder, named by its **Qase project code** and auto-selected by the active profile. One product's rules never leak into another product's session.
 
