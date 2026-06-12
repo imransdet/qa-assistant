@@ -29,10 +29,15 @@ An autonomous QA agent that runs inside VS Code. Give it a staging URL and your 
 ## What It Does
 
 ```
-You: "test it — App: https://staging.myapp.com — Feature: User Login"
+You: "test it — App: https://staging.myapp.com — <your requirements>"
+
+      where <your requirements> is any of:
+        Feature: User Login
+        Jira: PROJ-42
+        Figma: https://figma.com/file/abc123/Login-Flow
 
 Agent:
-  1. Reads your requirements (or fetches them from Jira)
+  1. Reads your requirements (or fetches them from Jira / Figma)
   2. Writes test cases → uploads to Qase
   3. Opens a real browser → executes every test
   4. Finds bugs → captures screenshot + console + network logs
