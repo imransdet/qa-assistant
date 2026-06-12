@@ -58,6 +58,21 @@ flowchart TD
 
 ---
 
+## Knowledge Base — the agent's product memory
+
+By default an AI test agent starts every session cold: it only knows the feature description and staging URL you give it that run. The `knowledge-base/` folder fixes that — it's persistent product memory the agent loads automatically before analyzing any requirements (WAY 1, 3, 4).
+
+| File | Answers | What it changes |
+|------|---------|-----------------|
+| `product-flows.md` | How do users actually move through the product? | Grounds happy-path tests in real navigation, not guesses |
+| `business-rules.md` | What is allowed, forbidden, or enforced? | **The bug-vs-intended oracle** — a rule here is authoritative truth, outranking heuristic guesses |
+| `feature-map.md` | What depends on what? | Adds regression-risk areas (a feature's `Used by` chain) to every test scope |
+| `known-defects.md` | Where has this product broken before? | Probes historical weak spots harder; prevents duplicate bug reports |
+
+**Why it matters:** with the knowledge base, the agent can tell a *confirmed* defect (violates a documented `BR-xx` rule) from a *suspected* one (heuristic only), avoids re-filing known bugs, and widens coverage into connected features. Start with a few entries per file — even a small KB makes the agent noticeably sharper. It's optional and additive: if the folder is empty, the agent falls back to spec-only analysis. See `knowledge-base/README.md` for the format.
+
+---
+
 ## Tech Stack
 
 | Tool | Role | Cost |
@@ -78,6 +93,11 @@ flowchart TD
 qa-agent/
 ├── CLAUDE.md                          # Agent brain — full workflow + trigger keywords
 ├── README.md                          # This file
+├── knowledge-base/                    # Persistent product memory (loaded every session)
+│   ├── product-flows.md               # Real navigation flows
+│   ├── business-rules.md              # Authoritative bug-vs-intended oracle
+│   ├── feature-map.md                 # Feature dependencies / blast radius
+│   └── known-defects.md               # Historical weak spots + filed tickets
 ├── .env.example                       # Template — copy to .env and fill in your tokens
 ├── .mcp.example.json                  # Template — copy to .mcp.json and fill in your tokens
 ├── .mcp.json                          # Active MCP config (gitignored — created from .mcp.example.json)

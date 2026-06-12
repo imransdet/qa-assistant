@@ -33,6 +33,31 @@ Before doing anything else, scan the user's message for a profile name:
 
 ---
 
+## Step 0.5 — Load Knowledge Base (runs before any requirements analysis)
+
+The `knowledge-base/` folder is the agent's **persistent product memory**. It carries product knowledge across sessions so the agent is not starting cold from only the feature description and URL.
+
+**When this step runs:** at the start of any WAY that analyzes requirements — **WAY 1, WAY 3, and WAY 4**. Skip it for WAY 2 (quick bug report) and WAY 5 (Jira ticket creation), which don't generate or evaluate test scenarios.
+
+**What to do:**
+1. Read all four files if they exist:
+   - `knowledge-base/product-flows.md` — real navigation flows
+   - `knowledge-base/business-rules.md` — the authoritative bug-vs-intended oracle
+   - `knowledge-base/feature-map.md` — feature dependencies / blast radius
+   - `knowledge-base/known-defects.md` — historical weak spots and filed tickets
+2. Hold this content as context for every sub-agent that follows (`requirements-analyzer`, `test-case-writer`, `edge-case-generator`, `playwright-navigator`, `severity-classifier`, `bug-reporter`, `test-case-reviewer`).
+3. If the folder or a file is missing or empty, continue silently — the KB is optional and additive. Never block a session because the KB is absent.
+
+**How the KB changes behavior:**
+- **Business rules outrank heuristics.** If observed behavior contradicts a `BR-xx` rule, it is a **confirmed** defect — cite the rule ID in the bug report. If behavior is unusual but matches a rule, it is **not** a bug.
+- **Spec vs KB conflict:** if session requirements contradict a knowledge-base rule, flag the contradiction in the analysis output instead of silently choosing one.
+- **Feature map drives regression scope:** include a feature's `Used by` chain as regression-risk areas in the testing scope.
+- **Known defects drive probing & dedup:** generate extra edge cases around `Open`/`Intermittent` entries; before filing a bug, check `known-defects.md` and reference an existing `Ref` instead of filing a duplicate.
+
+**After a session:** when a real new defect is confirmed, append it to `knowledge-base/known-defects.md` so the next session benefits. When a flow or rule changes, update the relevant file.
+
+---
+
 ## MCP Server Lifecycle
 
 When any keyword below triggers you, verify these MCP servers are active before doing anything else:
@@ -65,9 +90,11 @@ If a Jira issue key or URL is provided:
 
 ### Phase 1: Analyze Requirements
 
-1. Run the `requirements-analyzer` sub-agent
+0. Run **Step 0.5 — Load Knowledge Base** first if not already loaded this session
+1. Run the `requirements-analyzer` sub-agent — pass the loaded knowledge base as context
 2. If acceptance criteria are present in BDD/user-story format, also run `acceptance-criteria-parser`
 3. Identify all scenarios: happy path, negative, edge cases, boundary values, security
+4. Cross-reference the knowledge base: ground happy paths in `product-flows.md`, treat `business-rules.md` as the bug oracle, add `feature-map.md` `Used by` chains as regression risks, and probe `known-defects.md` weak spots
 
 ---
 
@@ -162,11 +189,13 @@ If a Jira key or URL is provided as requirements:
 
 ### Phase 1: Analyze Requirements
 
-1. Run the `requirements-analyzer` sub-agent
+0. Run **Step 0.5 — Load Knowledge Base** first if not already loaded this session
+1. Run the `requirements-analyzer` sub-agent — pass the loaded knowledge base as context
 2. If acceptance criteria are in BDD/user-story format, also run `acceptance-criteria-parser`
 3. If App URL provided, note it as context for UI-facing test step wording
 4. If Figma link provided, note it as design reference in test case descriptions
 5. If screenshots provided, describe observed UI state and factor into test scenarios
+6. Cross-reference the knowledge base: ground happy paths in `product-flows.md`, treat `business-rules.md` as authoritative expected behavior, and use `feature-map.md` + `known-defects.md` to widen coverage into regression-risk and historically weak areas
 
 ---
 
@@ -214,11 +243,13 @@ If either mandatory input is missing, ask:
 
 ### Phase 1: Fetch Suite & Requirements
 
+0. Run **Step 0.5 — Load Knowledge Base** first if not already loaded this session
 1. Parse the suite ID and project code from the Qase URL
 2. Call Qase MCP to list all test cases in the suite
 3. Fetch full details of each test case (title, severity, priority, type, layer, behavior, precondition, steps)
 4. If Jira link provided, fetch the issue via Jira MCP and extract requirements
 5. If app URL provided, navigate to it via Playwright MCP — explore all screens, forms, buttons, and UI states; build a UI inventory of every element found; use this to verify test case accuracy and identify coverage gaps
+6. Use the knowledge base during review: validate expected results against `business-rules.md`, check coverage against `product-flows.md`, and treat `feature-map.md` + `known-defects.md` as sources of missing regression scenarios in gap analysis
 
 ---
 
@@ -428,6 +459,8 @@ Errors: none / list any
 ## Global Rules
 
 - **Never start testing** without BOTH requirements and app URL confirmed
+- **Load the knowledge base** (Step 0.5) before analyzing requirements in WAY 1, 3, and 4 — `business-rules.md` is the authoritative bug-vs-intended oracle and outranks heuristic guesses
+- **Check `known-defects.md` before filing any bug** — reference an existing `Ref` instead of creating a duplicate
 - **Never skip artifact capture** on any failure
 - **Always link** Jira issues back to Qase test cases
 - **Save all screenshots/logs** to `./qa-artifacts/`
@@ -442,6 +475,7 @@ Errors: none / list any
 
 | When | Sub-Agent | Triggered By |
 |------|-----------|--------------|
+| Before analysis (WAY 1/3/4) | Step 0.5 — Load Knowledge Base | Any session that analyzes requirements |
 | Session starts | `requirements-analyzer` | User provides URL + feature + spec |
 | Acceptance criteria present | `acceptance-criteria-parser` | BDD/user story format detected |
 | Analysis complete | `test-case-writer` | Requirements analyzed |
